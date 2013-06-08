@@ -55,32 +55,31 @@ Task system
 	- TaskWorker: Start a thread, fetch task from task queue and run task. For each task, there might be multiple steps to go. 
 	- TaskHandler: Connect handler function with GUI by QT Signal system
 	- CmdTask: Task function for external command
-- Examples
-
-<pre>
-    def _startConvert(self, row):
-        worker = TaskWorker()
-        def begin():
-			self.status.setText('Started ...')
-        def end():
-			self.status.setText('Stopped ...')
-        def handler(msg):
-			t = msg.type
-			o = msg.output
-            if t == OutputType.OUTPUT:
-				self.status.setText("progress: " + msg.output)
-            if t == OutputType.NOTIFY and o.startswith('EXIT '):
-                code = int(o.split()[1])
-                if code == 0:
-					self.status.setText("done")
-                else:
-					self.status.setText("error")
-		# ... ...
-		# some initialization work
-		# ... ...
-        task = Task(CmdTask(["ls", "/tmp"]))
-        task.init(
-        	TaskHandler(begin), TaskHandler(end), TaskHandler(handler)
-            )
-        worker.add_task(task)
-</pre>
+	- Examples
+		<pre>
+	    def _startConvert(self, row):
+	        worker = TaskWorker()
+	        def begin():
+				self.status.setText('Started ...')
+	        def end():
+				self.status.setText('Stopped ...')
+	        def handler(msg):
+				t = msg.type
+				o = msg.output
+	            if t == OutputType.OUTPUT:
+					self.status.setText("progress: " + msg.output)
+	            if t == OutputType.NOTIFY and o.startswith('EXIT '):
+	                code = int(o.split()[1])
+	                if code == 0:
+						self.status.setText("done")
+	                else:
+						self.status.setText("error")
+			# ... ...
+			# some initialization work
+			# ... ...
+	        task = Task(CmdTask(["ls", "/tmp"]))
+	        task.init(
+	        	TaskHandler(begin), TaskHandler(end), TaskHandler(handler)
+	            )
+	        worker.add_task(task)
+		</pre>
