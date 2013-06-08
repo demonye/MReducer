@@ -5,7 +5,6 @@ A GUI of mencoder to reduce movie file size by xvid encoding
 
 In fact, the main purpose of this project is to demonstrate the yelib, which includes 2 main parts. One is a simple QT wrapper of PySide, one is an event driven task system implemented with Python generator.
 
-----------
 
 QT wrapper
 --------
