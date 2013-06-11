@@ -82,3 +82,9 @@ Task system
 	            )
 	        worker.add_task(task)
 		</pre>
+
+To be improved
+--------
+- Better interface to wrap mencoder options
+- Lack of exception handler
+
