@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-# -*- coding: gbk -*-
+# -*- coding: utf-8 -*-
 
 import os
 import time
@@ -55,7 +55,6 @@ class TaskOutput(object):
                 u"<span style='color:{};font-weight:bold;'>"
                 u"[{:6s}]</span> {}".format(
                     self.logtime, color, self.typestr, unicode(self))
-                    #self.output.decode(local_coding))
                 )
 
 
@@ -119,15 +118,11 @@ class Task(object):
                 hdlr.send(output)
 
 
-#@singleton
 class TaskWorker(object):
-
-    pause_flag = False
 
     def __init__(self, autostart=True, debug_level=OutputType.INFO):
         self._todo = Queue.Queue()
         self._workthd = Thread(target=self.run)
-        #self._dbg_lvl = debug_level
         if autostart:
             self._workthd.start()
         self._currtask = None
@@ -136,11 +131,6 @@ class TaskWorker(object):
         self._workthd.start()
 
     def stop(self, endThread=True):
-        #try:
-        #    while True:
-        #        self._todo.get(timeout=0.1)
-        #except Queue.Empty:
-        #    pass
         self.add_task('quit')
         self.stop_task()
         self._workthd.join()
@@ -177,10 +167,6 @@ class TaskWorker(object):
                             output = step.next()
                             task.emit(output)
                             while True:
-                                #if self.pause_flag:
-                                #    import pdb
-                                #    pdb.set_trace()
-                                #    self.pause_flag = False
                                 task.emit(step.send(task._continue))
                         elif isinstance(step,
                              (types.MethodType,types.FunctionType)):
@@ -192,8 +178,8 @@ class TaskWorker(object):
                     except Exception as ex:
                         print "run Exception", ex
                 if task._end: task._end.send()
-                ## task.close() will cause RuntimeError: 'generator ignored GeneratorExit'
-                ## See http://mail.python.org/pipermail/python-dev/2006-August/068429.html
+                # task.close() will cause RuntimeError: 'generator ignored GeneratorExit'
+                # See http://mail.python.org/pipermail/python-dev/2006-August/068429.html
             except Queue.Empty:
                 pass
 
@@ -229,10 +215,8 @@ def CmdTask(args=[], workdir=None):
         'stderr': STDOUT,
         'universal_newlines': True,
         'startupinfo': si,
+        'shell': False,     # mencoder cannot be terminated if shell is True
         }
-    # NOTE: mencoder.exe cannot be terminated if shell is True
-    #if os.name != 'posix':
-    #    popen_args['shell'] = True
 
     code = 0
     buf = StringIO()
@@ -241,47 +225,38 @@ def CmdTask(args=[], workdir=None):
     try:
         cmdline = ' '.join(args)
         (yield TaskOutput('START: {} ...'.format(cmdline)))
-        while True:
-            line = p.stdout.readline()
-            if line == "": break
-            if not (yield TaskOutput(line, OutputType.OUTPUT)):
-                raise CommandTerminated()
-        #
-        # Useful in case of universal_newlines is False
-        #
-        #lastline = ""
-        #while True:
-        #    line = p.stdout.read(512)
-        #    if line == "": break
-        #    buf.seek(0)
-        #    buf.write(line.replace("\r", "\n"))
-        #    buf.seek(0)
-        #    while True:
-        #        l = buf.readline()
-        #        if not l.endswith("\n"):
-        #            lastline = l
-        #            break
-        #        outline = lastline+l.rstrip()
-        #        lastline = ""
-        #        if outline == "":
-        #            continue
-        #        #print outline
-        #        if not (yield TaskOutput(outline, OutputType.OUTPUT)):
-        #            raise CommandTerminated()
+        if popen_args['universal_newlines']:
+            while True:
+                line = p.stdout.readline()
+                if line == "": break
+                if not (yield TaskOutput(line, OutputType.OUTPUT)):
+                    raise CommandTerminated()
+        else:
+            lastline = ""
+            while True:
+                line = p.stdout.read(512)
+                if line == "": break
+                buf.seek(0)
+                buf.write(line.replace("\r", "\n"))
+                buf.seek(0)
+                while True:
+                    l = buf.readline()
+                    if not l.endswith("\n"):
+                        lastline = l
+                        break
+                    outline = lastline+l.rstrip()
+                    lastline = ""
+                    if outline == "":
+                        continue
+                    #print outline
+                    if not (yield TaskOutput(outline, OutputType.OUTPUT)):
+                        raise CommandTerminated()
 
-        #errmsg = p.stderr.read()
-        #if len(errmsg) > 0:
-        #    raise Exception(errmsg)
         (yield TaskOutput('END: {} ...'.format(args[0])))
     except CommandTerminated:
         code = -2
         (yield TaskOutput('TERMINITED: {}'.format(args[0]), OutputType.WARN))
         try:
-            #import win32api
-            #handle = win32api.OpenProcess(1, False, p.pid)
-            #win32api.TerminateProcess(handle, -1)
-            #win32api.CloseHandle(handle)
-            #s.system("taskkill /f /pid {}".format(p.pid))
             p.terminate()
             p.wait()
         except: pass
@@ -306,19 +281,10 @@ if __name__ == "__main__":
     def hdlr(output):
         print output.output
 
-    #hdlr = MyHandler()
     task = Task(CmdTask(["dir", "D:\\temp\\msys"]))
     task.init(begin, end, TaskHandler(hdlr))
     task.put(CmdTask(["dir", "C:\\tmp"]))
     worker = TaskWorker()
     worker.add_task(task)
-    #while True:
-    #    try:
-    #        msg = my_que.get(0.1)
-    #        if msg.output.startswith('EXIT '):
-    #           break
-    #        print msg.output
-    #    except Queue.Empty:
-    #        pass
     time.sleep(2)
     worker.stop()

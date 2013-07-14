@@ -125,7 +125,7 @@ class MySQLDB(DB):
         if 'pw' in keywords:
             keywords['passwd'] = keywords.pop('pw')
         if 'charset' not in keywords:
-            keywords['charset'] = 'gbk'
+            keywords['charset'] = 'utf8'
 
         self.dbname = 'mysql'
         DB.__init__(self, self._db, keywords)
@@ -155,7 +155,7 @@ register_database('oracle', OracleDB)
 register_database('mysql', MySQLDB)
 
 if __name__ == "__main__":
-    db = database(dbn='mysql', host='localhost', user='root', pw='root', db='devdb', charset='gbk')
+    db = database(dbn='mysql', host='localhost', user='root', pw='root', db='devdb', charset='utf8')
     print(db.execute('insert into test1 values (%s, %s)', (1, 'world')))
 
     db = database(dbn='oracle', user='devdb', pw='devdb', db='XE')
