@@ -7,9 +7,8 @@ import types
 import Queue
 from threading import Thread, Lock, ThreadError
 from subprocess import *
-from subprocess import STARTUPINFO
 from yelib.util import enum
-from PySide.QtCore import QObject, Signal, Slot
+#from PySide.QtCore import QObject, Signal, Slot
 import locale
 from yelib.util import singleton
 from StringIO import StringIO
@@ -184,17 +183,27 @@ class TaskWorker(object):
                 pass
 
 
-class TaskHandler(QObject):
+#class TaskHandler(QObject):
+#
+#    sig = Signal(TaskOutput)
+#
+#    def __init__(self, *funcs):
+#        QObject.__init__(self)
+#        for func in funcs:
+#            self.sig.connect(func)
+#
+#    def send(self, output=TaskOutput('')):
+#        self.sig.emit(output)
 
-    sig = Signal(TaskOutput)
+class TaskHandler(object):
 
     def __init__(self, *funcs):
-        QObject.__init__(self)
-        for func in funcs:
-            self.sig.connect(func)
+        self._handlers = funcs
 
     def send(self, output=TaskOutput('')):
-        self.sig.emit(output)
+        for hdlr in self._handlers:
+            hdlr(output)
+
 
 class CommandTerminated(Exception):
     pass
@@ -206,6 +215,7 @@ def CmdTask(args=[], workdir=None):
         os.chdir(workdir)
     si = None
     if os.name != 'posix':
+        from subprocess import STARTUPINFO
         si = STARTUPINFO()
         si.dwFlags |= STARTF_USESHOWWINDOW
         si.wShowWindow = SW_HIDE
@@ -248,7 +258,6 @@ def CmdTask(args=[], workdir=None):
                     lastline = ""
                     if outline == "":
                         continue
-                    #print outline
                     if not (yield TaskOutput(outline, OutputType.OUTPUT)):
                         raise CommandTerminated()
 
@@ -263,7 +272,6 @@ def CmdTask(args=[], workdir=None):
     except Exception as ex:
         code = -1
         errmsg = ex.message or ex.args[-1]
-        #print errmsg
         (yield TaskOutput(errmsg, OutputType.ERROR))
     finally:
         buf.close()
